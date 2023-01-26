@@ -7,7 +7,7 @@
 		initEdgesModel,
 		initConditionalModel
 	} from './funcs.js';
-	import { Group, Object3DInstance, useFrame } from '@threlte/core';
+	import { T, useFrame } from '@threlte/core';
 	import { useGltf } from '@threlte/extras';
 
 	export let model = 'cabin.glb';
@@ -38,7 +38,7 @@
 
 	const url =
 		'https://rawgit.com/KhronosGroup/glTF-Sample-Models/master/2.0/FlightHelmet/glTF/FlightHelmet.gltf';
-	const { gltf } = useGltf(url);
+	const { gltf } = useGltf(`./models/${model}`);
 
 	$: console.log($gltf);
 
@@ -49,7 +49,7 @@
 	$: depthModel = initDepthModel(originalModel, params);
 	$: conditionalModel = initConditionalModel(originalModel, params);
 	$: models = [
-		originalModel
+		originalModel,
 		edgesModel,
 		backgroundModel,
 		shadowModel,
@@ -58,10 +58,10 @@
 	];
 </script>
 
-<Group rotation={{ y: rotation }}>
+<T.Group rotation={[0, rotation, 0]}>
 	{#each models as model}
 		{#if model}
-			<Object3DInstance object={model} scale={20} />
+			<T.Object3DInstance object={model} scale={20} />
 		{/if}
 	{/each}
-</Group>
+</T.Group>
