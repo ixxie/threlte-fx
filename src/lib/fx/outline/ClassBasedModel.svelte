@@ -2,9 +2,7 @@
 	import { useThrelte } from '@threlte/core';
 	import { GLTF } from '@threlte/extras';
 
-	import { OutlineEffect } from './main.js';
-
-	import { onMount } from 'svelte';
+	import { OutlineEffect } from './class.js';
 
 	export let model = 'cabin.glb';
 
@@ -18,8 +16,6 @@
 <GLTF
 	bind:gltf
 	on:load={addEffect}
-	castShadow
-	receiveShadow
 	url={`./models/${model}`}
 	scale={1}
 	position={{ x: 0, y: 0, z: 0 }}

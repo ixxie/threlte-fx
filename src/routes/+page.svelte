@@ -1,8 +1,8 @@
 <script lang="ts">
 	import TestCanvas from '$lib/TestCanvas.svelte';
-	import Model from '$lib/fx/outline/Model.svelte';
+	import OutlineModel from '$lib/fx/outline/FuncBasedModel.svelte';
 </script>
 
 <TestCanvas>
-	<Model />
+	<OutlineModel />
 </TestCanvas>
