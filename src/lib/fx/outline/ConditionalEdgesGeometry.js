@@ -10,6 +10,7 @@ const triangle0 = new Triangle();
 const triangle1 = new Triangle();
 const normal0 = new Vector3();
 const normal1 = new Vector3();
+
 export class ConditionalEdgesGeometry extends BufferGeometry {
 	constructor(geometry) {
 		super();

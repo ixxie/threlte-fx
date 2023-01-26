@@ -17,7 +17,7 @@
 </script>
 
 <Canvas size={{ width, height }}>
-	<PerspectiveCamera fov={50} position={{ x: 20, y: -20, z: 10 }} lookAt={{ x: 1, y: 1, z: 1 }}>
+	<PerspectiveCamera fov={50} position={{ x: 20, y: 5, z: 20 }}>
 		<OrbitControls enableDamping />
 	</PerspectiveCamera>
 	<AmbientLight intensity={2} />

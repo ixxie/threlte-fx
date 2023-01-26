@@ -1,16 +1,8 @@
 import * as THREE from 'three';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
-import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
-import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
-import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
-
-import { OutsideEdgesGeometry } from './OutsideEdgesGeometry.js';
 import { ConditionalEdgesGeometry } from './ConditionalEdgesGeometry.js';
 import { ConditionalEdgesShader } from './ConditionalEdgesShader.js';
-import { ConditionalLineSegmentsGeometry } from './ConditionalLineSegmentsGeometry.js';
-import { ConditionalLineMaterial } from './ConditionalLineMaterial.js';
-import { ColoredShadowMaterial } from './ColoredShadowMaterial.js';
 
 function mergeObject(object) {
 	object.updateMatrixWorld(true);
@@ -38,86 +30,49 @@ function mergeObject(object) {
 	return group;
 }
 
-export function initModel(gltf) {
+export function initOriginalModel(gltf) {
 	if (!gltf) {
 		return;
 	}
-	console.log('init original model');
 	const originalModel = mergeObject(gltf.scene);
 	originalModel.children[0].geometry.computeBoundingBox();
 	originalModel.children[0].castShadow = true;
 	return originalModel;
 }
 
-export function initBackgroundModel(originalModel, params) {
+export function initFillModel(originalModel, params) {
 	if (!originalModel) {
 		return;
 	}
-	console.log('init background model');
-
-	let backgroundModel = originalModel.clone();
-	backgroundModel.traverse((c) => {
+	let fillModel = originalModel.clone();
+	fillModel.traverse((c) => {
 		if (c.isMesh) {
-			c.material = new THREE.MeshBasicMaterial({ color: params.lightModel });
+			c.material = new THREE.MeshBasicMaterial();
 			c.material.polygonOffset = true;
 			c.material.polygonOffsetFactor = 1;
 			c.material.polygonOffsetUnits = 1;
 			c.renderOrder = 2;
 		}
 	});
-	return backgroundModel;
-}
-
-export function initShadowModel(originalModel, params) {
-	if (!originalModel) {
-		return;
-	}
-	console.log('init shadow model');
-	let shadowModel = originalModel.clone();
-	shadowModel.traverse((c) => {
+	fillModel.visible = true;
+	fillModel.traverse((c) => {
 		if (c.isMesh) {
-			c.material = new ColoredShadowMaterial({ color: params.lightModel, shininess: 1.0 });
-			c.material.polygonOffset = true;
-			c.material.polygonOffsetFactor = 1;
-			c.material.polygonOffsetUnits = 1;
-			c.receiveShadow = true;
-			c.renderOrder = 2;
+			c.material.transparent = params.fill.opacity !== 1.0;
+			c.material.opacity = params.fill.opacity;
+			c.material.color.set(params.fill.color);
 		}
 	});
-	return shadowModel;
+	return fillModel;
 }
 
-export function initDepthModel(originalModel, params) {
-	console.log('init depth model');
+export function initLineModel(originalModel, params) {
 	if (!originalModel) {
 		return;
 	}
-	let depthModel = originalModel.clone();
-	depthModel.traverse((c) => {
-		if (c.isMesh) {
-			c.material = new THREE.MeshBasicMaterial({ color: params.lightModel });
-			c.material.polygonOffset = true;
-			c.material.polygonOffsetFactor = 1;
-			c.material.polygonOffsetUnits = 1;
-			c.material.colorWrite = false;
-			c.renderOrder = 1;
-		}
-	});
-	return depthModel;
-}
-
-export function initEdgesModel(originalModel, params) {
-	if (!originalModel) {
-		return;
-	}
-	console.log('init edges model');
-
-	// store the model and add it to the scene to display
-	// behind the lines
-	const edgesModel = originalModel.clone();
+	const lineModel = originalModel.clone();
 
 	const meshes = [];
-	edgesModel.traverse((c) => {
+	lineModel.traverse((c) => {
 		if (c.isMesh) {
 			meshes.push(c);
 		}
@@ -128,44 +83,40 @@ export function initEdgesModel(originalModel, params) {
 		const parent = mesh.parent;
 
 		let lineGeom;
-		lineGeom = new THREE.EdgesGeometry(mesh.geometry, params.threshold);
+		lineGeom = new THREE.EdgesGeometry(mesh.geometry, params.line.threshold);
 
 		const line = new THREE.LineSegments(
 			lineGeom,
-			new THREE.LineBasicMaterial({ color: params.lightLines, linewidth: 3 })
+			new THREE.LineBasicMaterial({ color: params.line.color, linewidth: params.line.width })
 		);
 		line.position.copy(mesh.position);
 		line.scale.copy(mesh.scale);
 		line.rotation.copy(mesh.rotation);
 
-		const thickLineGeom = new LineSegmentsGeometry().fromEdgesGeometry(lineGeom);
-		const thickLines = new LineSegments2(
-			thickLineGeom,
-			new LineMaterial({ color: params.lightLines, linewidth: 3 })
-		);
-		thickLines.position.copy(mesh.position);
-		thickLines.scale.copy(mesh.scale);
-		thickLines.rotation.copy(mesh.rotation);
-
 		parent.remove(mesh);
 		parent.add(line);
-		//parent.add(thickLines);
 	}
-	return edgesModel;
+
+	lineModel.traverse((c) => {
+		if (c.material) {
+			c.material.linewidth = params.line.width; // broken
+			c.material.color.set(params.line.color);
+		}
+	});
+
+	return lineModel;
 }
 
-export function initConditionalModel(originalModel, params) {
+export function initOutlineModel(originalModel, params) {
 	if (!originalModel) {
 		return;
 	}
-	console.log('init conditional model');
-
-	let conditionalModel = originalModel.clone();
-	conditionalModel.visible = false;
+	let outlineModel = originalModel.clone();
+	outlineModel.visible = false;
 
 	// get all meshes
 	const meshes = [];
-	conditionalModel.traverse((c) => {
+	outlineModel.traverse((c) => {
 		if (c.isMesh) {
 			meshes.push(c);
 		}
@@ -186,7 +137,7 @@ export function initConditionalModel(originalModel, params) {
 		// Create the conditional edges geometry and associated material
 		const lineGeom = new ConditionalEdgesGeometry(BufferGeometryUtils.mergeVertices(mergedGeom));
 		const material = new THREE.ShaderMaterial(ConditionalEdgesShader);
-		material.uniforms.diffuse.value.set(params.lightLines);
+		material.uniforms.diffuse.value.set(params.line.color);
 
 		// Create the line segments objects and replace the mesh
 		const line = new THREE.LineSegments(lineGeom, material);
@@ -194,21 +145,14 @@ export function initConditionalModel(originalModel, params) {
 		line.scale.copy(mesh.scale);
 		line.rotation.copy(mesh.rotation);
 
-		const thickLineGeom = new ConditionalLineSegmentsGeometry().fromConditionalEdgesGeometry(
-			lineGeom
-		);
-		const thickLines = new LineSegments2(
-			thickLineGeom,
-			new ConditionalLineMaterial({ color: params.lightLines, linewidth: 2 })
-		);
-		thickLines.position.copy(mesh.position);
-		thickLines.scale.copy(mesh.scale);
-		thickLines.rotation.copy(mesh.rotation);
-
 		parent.remove(mesh);
 		parent.add(line);
-		parent.add(thickLines);
 	}
-	console.log(conditionalModel);
-	return conditionalModel;
+	outlineModel.visible = true;
+	outlineModel.traverse((c) => {
+		if (c.material) {
+			c.material.uniforms.diffuse.value.set(params.linesColor);
+		}
+	});
+	return outlineModel;
 }
