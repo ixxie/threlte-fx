@@ -7,7 +7,7 @@
 		initEdgesModel,
 		initConditionalModel
 	} from './funcs.js';
-	import { T, useFrame } from '@threlte/core';
+	import { T, Three, useFrame } from '@threlte/core';
 	import { useGltf } from '@threlte/extras';
 
 	export let model = 'cabin.glb';
@@ -58,10 +58,10 @@
 	];
 </script>
 
-<T.Group rotation={[0, rotation, 0]}>
+<T.Group rotation.y={rotation}>
 	{#each models as model}
 		{#if model}
-			<T.Object3DInstance object={model} scale={20} />
+			<Three type={model} scale={20} />
 		{/if}
 	{/each}
 </T.Group>

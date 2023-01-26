@@ -114,7 +114,7 @@ export function initEdgesModel(originalModel, params) {
 
 	// store the model and add it to the scene to display
 	// behind the lines
-	let edgesModel = originalModel.clone();
+	const edgesModel = originalModel.clone();
 
 	const meshes = [];
 	edgesModel.traverse((c) => {
@@ -132,7 +132,7 @@ export function initEdgesModel(originalModel, params) {
 
 		const line = new THREE.LineSegments(
 			lineGeom,
-			new THREE.LineBasicMaterial({ color: params.lightLines })
+			new THREE.LineBasicMaterial({ color: params.lightLines, linewidth: 3 })
 		);
 		line.position.copy(mesh.position);
 		line.scale.copy(mesh.scale);
@@ -149,7 +149,7 @@ export function initEdgesModel(originalModel, params) {
 
 		parent.remove(mesh);
 		parent.add(line);
-		parent.add(thickLines);
+		//parent.add(thickLines);
 	}
 	return edgesModel;
 }
